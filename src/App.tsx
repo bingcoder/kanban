@@ -1,58 +1,36 @@
-import {
-  App,
-  Avatar,
-  Button,
-  Card,
-  Col,
-  DatePicker,
-  Form,
-  Input,
-  Modal,
-  Row,
-  Select,
-  Space,
-  Typography,
-} from "antd";
-import classNames from "classnames";
-import React, {
-  forwardRef,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import {
-  DragDropContext,
-  Draggable,
-  DraggableProvided,
-  DraggableStateSnapshot,
-  Droppable,
-  DroppableProvided,
-  DroppableStateSnapshot,
-  DropResult,
-} from "react-beautiful-dnd";
-
-import dayjs from "dayjs";
-
-import {
-  getTaskByStatus,
-  db,
-  getTasks,
-  modifyTaskStatus,
-  insetTask,
-  insertTask,
-} from "./utils/request";
-import { columns, TaskRecord, TaskStatus } from "./constants";
-import { useRequest } from "ahooks";
-import { ExclamationCircleFilled, TrophyTwoTone } from "@ant-design/icons";
+import { useMount } from "ahooks";
+import { Space } from "antd";
+import { useEffect } from "react";
+import { DragDropContext, DropResult } from "react-beautiful-dnd";
+import Header from "./components/Header";
 import TaskColumn from "./components/TaskColumn";
-import ModifyForm from "./components/Modify";
-import { formatValues } from "./utils/formatValus";
+import { TaskStatus } from "./constants";
+import { useDeveloperList, useStatusList, useTaskList } from "./state";
+import { useAddTask } from "./utils/hooks";
+import { modifyTaskStatus } from "./utils/request";
 
 function Main() {
-  const { modal, message } = App.useApp();
-  const { data, loading, mutate, runAsync: getTasksRun } = useRequest(getTasks);
-  const { runAsync } = useRequest(insertTask, { manual: true });
+  const { tasks, updateTasks, getTasks } = useTaskList();
+  const { status, getStatus } = useStatusList();
+  const { developer, getDeveloper } = useDeveloperList();
+  const handleAddTask = useAddTask();
+
+  useMount(() => {
+    getTasks();
+    getStatus();
+    getDeveloper();
+  });
+
+  useEffect(() => {
+    console.log("developer", developer);
+  }, [developer]);
+  useEffect(() => {
+    console.log("status", status);
+  }, [status]);
+  useEffect(() => {
+    console.log("tasks", tasks);
+  }, [tasks]);
+
   const handleDragEnd = (result: DropResult) => {
     if (result) {
       const { draggableId, source, destination } = result;
@@ -64,58 +42,46 @@ function Main() {
       ) {
         return;
       }
-      const sourceList = data?.[source.droppableId as TaskStatus] || [];
+      const sourceList = tasks?.[source.droppableId as TaskStatus] || [];
       const destinationList =
-        data?.[destination!.droppableId as TaskStatus] || [];
+        tasks?.[destination!.droppableId as TaskStatus] || [];
 
-      const task = sourceList.splice(source.index, 1);
-      destinationList.splice(destination?.index!, 0, task[0]);
-      mutate({
-        ...(data || {}),
+      const task = sourceList.splice(source.index, 1)[0];
+      task.status = destination.droppableId as TaskStatus;
+      destinationList.splice(destination?.index!, 0, task);
+      updateTasks({
+        ...(tasks || {}),
         [source.droppableId as TaskStatus]: sourceList,
         [destination?.droppableId as TaskStatus]: destinationList,
-      } as typeof data);
-
+      } as typeof tasks);
       modifyTaskStatus({
         _id: draggableId,
         status: destination.droppableId as TaskStatus,
       });
     }
   };
-  const [form] = Form.useForm();
   const handelExtra = (status: TaskStatus) => {
     if (status === TaskStatus.ToBeDeveloped) {
-      modal.confirm({
-        title: "添加任务",
-        content: <ModifyForm form={form} />,
-        async onOk() {
-          const values = await form.validateFields();
-          return runAsync({
-            status: TaskStatus.ToBeDeveloped,
-            ...formatValues(values),
-          }).then(() => {
-            message.success("添加成功");
-            form.resetFields();
-            getTasksRun();
-          });
-        },
-      });
+      handleAddTask();
     }
   };
   return (
-    <DragDropContext onDragEnd={handleDragEnd}>
-      <Space className="task-container" size="middle">
-        {columns.map((column) => (
-          <TaskColumn
-            key={column.status}
-            {...column}
-            data={data?.[column.status]}
-            handelExtra={handelExtra}
-            getTasks={getTasksRun}
-          />
-        ))}
-      </Space>
-    </DragDropContext>
+    <>
+      <Header />
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <Space className="task-container" size="middle">
+          {status.map((column) => (
+            <TaskColumn
+              key={column.value}
+              title={column.label}
+              status={column.value}
+              data={tasks?.[column.value]}
+              handelExtra={handelExtra}
+            />
+          ))}
+        </Space>
+      </DragDropContext>
+    </>
   );
 }
 

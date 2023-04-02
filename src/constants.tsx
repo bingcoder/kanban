@@ -8,6 +8,7 @@ export enum TaskStatus {
   UnderTest = "5",
   Completed = "6",
 }
+
 export const columns = [
   {
     title: "待开发",
@@ -42,4 +43,12 @@ export interface TaskRecord {
   title: string;
   startTime: string;
   endTime: string;
+  developer: string[];
+  progress: number;
+}
+
+export interface StatusRecord {
+  _id: string;
+  label: string;
+  status: TaskStatus;
 }
