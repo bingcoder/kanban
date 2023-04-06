@@ -1,0 +1,117 @@
+{
+  "name": "kanban",
+  "displayName": "kanban",
+  "description": "",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.77.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "task-kanban",
+          "title": "Kanban",
+          "icon": "media/kanban.svg"
+        }
+      ]
+    },
+    "views": {
+      "task-kanban": [
+        {
+          "id": "vsc-task-kanban",
+          "name": "Explorer",
+          "icon": "media/kanban.svg",
+          "contextualTitle": "Explorer"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "vscTaskKanban.addKanban",
+          "when": "view == vsc-task-kanban",
+          "group": "navigation"
+        },
+        {
+          "command": "vscTaskKanban.refresh",
+          "when": "view == vsc-task-kanban",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "vscTaskKanban.renameKanban",
+          "when": "view == vsc-task-kanban"
+        },
+        {
+          "command": "vscTaskKanban.deleteKanban",
+          "when": "view == vsc-task-kanban"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "vscTaskKanban.openKanban",
+        "title": "OpenKanban"
+      },
+      {
+        "command": "vscTaskKanban.addKanban",
+        "title": "%ext.command.add%",
+        "icon": "$(file-add)"
+      },
+      {
+        "command": "vscTaskKanban.refresh",
+        "title": "%ext.command.refresh%",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "vscTaskKanban.renameKanban",
+        "title": "%ext.command.rename%",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "vscTaskKanban.deleteKanban",
+        "title": "%ext.command.delete%",
+        "icon": "$(trash)"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "yarn run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "yarn run compile-tests && yarn run compile && yarn run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.0.0",
+    "@types/mocha": "^10.0.0",
+    "@types/node": "16.x",
+    "@types/vscode": "^1.77.0",
+    "@typescript-eslint/eslint-plugin": "^5.38.1",
+    "@typescript-eslint/parser": "^5.38.1",
+    "@vscode/test-electron": "^2.1.5",
+    "eslint": "^8.24.0",
+    "glob": "^8.0.3",
+    "mocha": "^10.0.0",
+    "ts-loader": "^9.4.1",
+    "typescript": "^4.8.4",
+    "webpack": "^5.74.0",
+    "webpack-cli": "^4.10.0"
+  },
+  "dependencies": {
+    "@octokit/rest": "^19.0.7",
+    "@seald-io/nedb": "^4.0.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}
