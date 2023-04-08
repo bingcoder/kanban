@@ -1,0 +1,73 @@
+/* .task-container {
+  padding: 10px;
+  background-color: #eee;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 6px;
+  min-height: 100vh;
+} */
+
+body {
+  background-color: #eee;
+}
+
+.task-app-header {
+  padding: 10px 24px;
+  background-color: #fff;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+.task-container {
+  padding: 64px 24px 0px;
+  align-items: stretch;
+}
+
+.task-columns {
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 6px;
+  height: calc(100vh - 80px);
+  background-color: #eee;
+}
+
+.task-columns .task-columns-title {
+  padding: 10px;
+}
+
+.task-droppable-container {
+  height: 0;
+  flex-grow: 1;
+  padding: 10px;
+  border-radius: 6px;
+  overflow: hidden auto;
+  transition: background-color 0.3s ease;
+}
+
+.task-droppable-container-dragging-over {
+  // background-color: pink;
+  border: 2px solid #1677ff;
+}
+
+.task-card {
+  padding: 16px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  background-color: #fff;
+  .task-card-title {
+    font-size: 14px;
+    font-weight: normal;
+    color: #000;
+  }
+  .ant-picker-range {
+    width: 220px;
+    margin-left: -6px;
+    input {
+      color: #787c8a;
+    }
+  }
+}

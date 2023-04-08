@@ -1,14 +1,7 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import NeDb from "@seald-io/nedb";
-// eslint-disable-next-line @typescript-eslint/naming-convention
-
-// console.log(taskDbb.);
-
-// taskDb.insertAsync({title: 'string'}).then(res => {
-// 	console.log(res);
-
-// })
+import dayjs from "dayjs";
 
 interface TreeItem {
   _id: string;
@@ -32,7 +25,7 @@ class KanbanDataProvider implements vscode.TreeDataProvider<TreeItem> {
   }
 
   getChildren(element: TreeItem) {
-    return this.db.kanbanDb.findAsync({}) as any;
+    return this.db.kanbanDb.findAsync({}).sort({ createTime: 1 }) as any;
   }
 
   getTreeItem(item: TreeItem) {
@@ -99,7 +92,10 @@ class KanbanView {
       prompt: "Type the new title",
       placeHolder: "Type the new title",
     });
-    await this.kanbanDb.insertAsync({ title });
+    await this.kanbanDb.insertAsync({
+      title,
+      createTime: dayjs().format("YYYY-MM-DD"),
+    });
     this.refreshTree();
   };
 
@@ -134,11 +130,9 @@ class KanbanView {
     console.log(item);
   };
 
-  add = async () => {};
-
-  deleteItem = (item: TreeItem) => {};
-
-  rename = async (item: TreeItem) => {};
+  addTask = async (doc: any) => {
+    await this.taskDb.insertAsync(doc);
+  };
 }
 
 export function activate(context: vscode.ExtensionContext) {
