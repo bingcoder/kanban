@@ -1,12 +1,23 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import NeDb from "@seald-io/nedb";
-import dayjs from "dayjs";
+import {
+  VscodeReceiveMessage,
+  UpdateStatusMessage,
+  UpdateDeveloperMessage,
+  AddTaskRequestMessage,
+  UpdateTaskRequestMessage,
+  GetTasksRequestMessage,
+  TaskRecord,
+  Kanban,
+  MessagePayload,
+  UpdateTasksResponseMessage,
+  UpdateKanbanResponseMessage,
+} from "./constants";
 
 interface TreeItem {
   _id: string;
   title: string;
-  createTime: string;
 }
 
 class KanbanDataProvider implements vscode.TreeDataProvider<TreeItem> {
@@ -24,8 +35,8 @@ class KanbanDataProvider implements vscode.TreeDataProvider<TreeItem> {
     this._onDidChangeTreeData.fire(undefined);
   }
 
-  getChildren(element: TreeItem) {
-    return this.db.kanbanDb.findAsync({}).sort({ createTime: 1 }) as any;
+  getChildren() {
+    return this.db.kanbanDb.findAsync({}).sort({ createdAt: 1 }) as any;
   }
 
   getTreeItem(item: TreeItem) {
@@ -45,16 +56,19 @@ class KanbanDataProvider implements vscode.TreeDataProvider<TreeItem> {
 class KanbanView {
   readonly treeDataProvider: KanbanDataProvider;
   readonly view: vscode.TreeView<TreeItem>;
-  readonly kanbanDb: NeDb;
-  readonly taskDb: NeDb;
+  readonly kanbanDb: NeDb<Kanban>;
+  readonly taskDb: NeDb<TaskRecord>;
+  private webviewPanel: vscode.WebviewPanel | undefined = undefined;
   constructor(readonly context: vscode.ExtensionContext) {
     this.kanbanDb = new NeDb({
       filename: path.join(context.extensionPath, "db/kanban.db"),
       autoload: true,
+      timestampData: true,
     });
     this.taskDb = new NeDb({
       filename: path.join(context.extensionPath, "db/task.db"),
       autoload: true,
+      timestampData: true,
     });
     this.treeDataProvider = new KanbanDataProvider(context, {
       kanbanDb: this.kanbanDb,
@@ -86,17 +100,38 @@ class KanbanView {
     this.treeDataProvider.refresh();
   };
 
+  verifyKanban = async (title?: string) => {
+    let errMsg: string = "";
+
+    if (!title) {
+      errMsg = "请输入名称!!!";
+    }
+    const kanban = await this.kanbanDb.findOneAsync({ title });
+    if (kanban) {
+      errMsg = `看板${title}已经存在!!!`;
+    }
+
+    if (errMsg) {
+      vscode.window.showErrorMessage(errMsg);
+      return Promise.reject();
+    }
+  };
+
   // kanban
   addKanban = async () => {
     const title = await vscode.window.showInputBox({
       prompt: "Type the new title",
       placeHolder: "Type the new title",
     });
-    await this.kanbanDb.insertAsync({
-      title,
-      createTime: dayjs().format("YYYY-MM-DD"),
-    });
-    this.refreshTree();
+    await this.verifyKanban(title);
+    if (title) {
+      await this.kanbanDb.insertAsync({
+        title,
+        status: [],
+        developer: [],
+      } as any);
+      this.refreshTree();
+    }
   };
 
   deleteKanban = async (item: TreeItem) => {
@@ -112,6 +147,9 @@ class KanbanView {
 
     if (pickItem?.value) {
       await this.kanbanDb.removeAsync({ _id: item._id }, { multi: false });
+      if (this.webviewPanel && this.webviewPanel.title === item.title) {
+        this.webviewPanel.dispose();
+      }
       this.refreshTree();
     }
   };
@@ -122,16 +160,120 @@ class KanbanView {
       prompt: "Type the new title",
       placeHolder: "Type the new title",
     });
+    await this.verifyKanban(title);
     await this.kanbanDb.updateAsync({ _id: item._id }, { $set: { title } });
+    if (this.webviewPanel && this.webviewPanel.title === item.title) {
+      this.webviewPanel.title = title!;
+    }
     this.refreshTree();
   };
 
-  openKanban = (item: TreeItem) => {
-    console.log(item);
+  refreshWebviewKanban = async (_id: string) => {
+    const kanban = await this.kanbanDb.findOneAsync({ _id });
+    if (this.webviewPanel) {
+      this.webviewPanel.webview.postMessage(
+        new UpdateKanbanResponseMessage(kanban)
+      );
+    }
   };
 
-  addTask = async (doc: any) => {
-    await this.taskDb.insertAsync(doc);
+  updateStatus = async ({
+    _id,
+    status,
+  }: MessagePayload<UpdateStatusMessage>) => {
+    await this.kanbanDb.updateAsync({ _id }, { $set: { status } });
+    await this.refreshWebviewKanban(_id);
+  };
+
+  updateDeveloper = async ({
+    _id,
+    developer,
+  }: MessagePayload<UpdateDeveloperMessage>) => {
+    await this.kanbanDb.updateAsync({ _id }, { $set: { developer } });
+    await this.refreshWebviewKanban(_id);
+  };
+
+  // 更新任务
+  refreshWebviewTasks = async (
+    payload: MessagePayload<GetTasksRequestMessage>
+  ) => {
+    const tasks = await this.taskDb
+      .findAsync({ kanban: payload._id })
+      .sort({ createdAt: 1 });
+    if (this.webviewPanel) {
+      const tasksMap: any = {};
+      tasks.forEach((item) => {
+        if (tasksMap[item.status]) {
+          tasksMap[item.status].push(item);
+        } else {
+          tasksMap[item.status] = [item];
+        }
+      });
+      this.webviewPanel.webview.postMessage(
+        new UpdateTasksResponseMessage(tasksMap)
+      );
+    }
+  };
+
+  addTask = async (payload: MessagePayload<AddTaskRequestMessage>) => {
+    await this.taskDb.insertAsync(payload as any);
+    await this.refreshWebviewTasks({ _id: payload.kanban });
+  };
+
+  updateTask = async (data: MessagePayload<UpdateTaskRequestMessage>) => {};
+
+  openKanban = async (item: TreeItem) => {
+    const columnToShowIn = vscode.window.activeTextEditor
+      ? vscode.window.activeTextEditor.viewColumn
+      : undefined;
+
+    if (this.webviewPanel) {
+      this.webviewPanel.dispose();
+    }
+    this.webviewPanel = vscode.window.createWebviewPanel(
+      "vscKanban",
+      item.title,
+      columnToShowIn!,
+      {
+        enableScripts: true,
+        retainContextWhenHidden: true,
+      }
+    );
+
+    this.webviewPanel.onDidDispose(
+      () => {
+        this.webviewPanel = void 0;
+      },
+      null,
+      this.context.subscriptions
+    );
+
+    const script = this.webviewPanel.webview.asWebviewUri(
+      vscode.Uri.file(path.join(this.context.extensionPath, "webview/main.js"))
+    );
+
+    const kanban = await this.kanbanDb.findOneAsync({ _id: item._id });
+    if (kanban) {
+      this.webviewPanel.webview.html = `<!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="UTF-8" />
+          </head>
+          <body>
+          <div id="root"></div>
+            <script>var vscKanban = ${JSON.stringify(kanban)}</script>
+            <script crossorigin src=${script}></script>
+          </body>
+        </html>`;
+
+      this.webviewPanel.webview.onDidReceiveMessage(
+        (message: VscodeReceiveMessage) => {
+          if (message.source === "vscKanban") {
+            this[message.command]?.(message.payload as any);
+          }
+        }
+      );
+    }
   };
 }
 

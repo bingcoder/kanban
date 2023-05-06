@@ -3,12 +3,9 @@ import {
   DraggableProvided,
   DraggableStateSnapshot,
 } from "react-beautiful-dnd";
-import { TaskRecord, TaskStatus } from "../constants";
 import {
   Avatar,
   Button,
-  Card,
-  Checkbox,
   Col,
   DatePicker,
   Dropdown,
@@ -19,35 +16,31 @@ import {
   Space,
   Tag,
   Typography,
-  message,
-  notification,
 } from "antd";
 import {
   BorderOutlined,
   CaretDownOutlined,
   EllipsisOutlined,
-  TrophyTwoTone,
 } from "@ant-design/icons";
 
-import dayjs from "dayjs";
 import { useMemo } from "react";
 import { useBoolean } from "ahooks";
-import { deleteTask, updateTask } from "../utils/request";
-import { useDeveloperList, useStatusList, useTaskList } from "../state";
-import { useUpdateTask } from "../utils/hooks";
+import { useDeveloper, useStatus } from "../state";
 import { RangePickerProps } from "antd/es/date-picker";
-import { formatValues } from "../utils/formatValus";
-
-const { RangePicker } = DatePicker;
+import { TaskRecord } from "../../constants";
+import { useEditStatus, useEditTask } from "../hooks";
 
 const TaskSelector: React.FC<{
   onClick: MenuProps["onClick"];
   items: MenuProps["items"];
-  status: TaskStatus;
+  status: string;
 }> = ({ onClick, items, status }) => {
   const [isHover, { setTrue, setFalse }] = useBoolean(false);
   return (
-    <Dropdown menu={{ selectedKeys: [status], items, onClick }}>
+    <Dropdown
+      trigger={["click"]}
+      menu={{ selectedKeys: [status], items, onClick }}
+    >
       <Button
         size="small"
         type="text"
@@ -72,26 +65,26 @@ const Task: React.FC<
   }>
 > = (props) => {
   const { task, index } = props;
-  const statusList = useStatusList((state) => state.status);
-  const developerList = useDeveloperList((s) => s.developer);
-  const { getTasks } = useTaskList();
-  const handleUpdateTask = useUpdateTask(task);
+  const { status } = useStatus();
+  const { developer: developerList } = useDeveloper();
+  const handleEditTask = useEditTask();
 
   const items: MenuProps["items"] = useMemo(() => {
     return [
       {
         key: TaskAction.Modify,
-        label: <span onClick={handleUpdateTask}>编辑</span>,
+        label: <span onClick={() => handleEditTask(task)}>编辑</span>,
       },
       {
         key: TaskAction.Delete,
         label: (
           <Popconfirm
             arrow={false}
-            onConfirm={() =>
-              deleteTask(task._id).then(() => {
-                getTasks();
-              })
+            onConfirm={
+              () => {}
+              // deleteTask(task._id).then(() => {
+              //   getTasks();
+              // })
             }
             title="确认删除"
           >
@@ -104,29 +97,29 @@ const Task: React.FC<
   }, [task]);
 
   const statusItems: MenuProps["items"] = useMemo(() => {
-    return statusList.map((item) => ({
-      key: item.value,
+    return status.map((item) => ({
+      key: item.id,
       label: item.label,
     }));
-  }, [statusList]);
+  }, [status]);
 
   const developer = useMemo(() => {
-    return developerList.filter((item) =>
-      task?.developer?.includes(item.value)
-    );
+    return developerList.filter((item) => task?.developer?.includes(item.id));
   }, [developerList, task?.developer]);
 
   const handleChangeStatus: MenuProps["onClick"] = (info) => {
-    if (info.key === task.status) return;
-    updateTask({ _id: task._id, status: info.key as TaskStatus }).then(() => {
-      getTasks();
-    });
+    if (info.key === task.status) {
+      return;
+    }
+    // updateTask({ _id: task._id, status: info.key }).then(() => {
+    //   getTasks();
+    // });
   };
 
   const handelTaskDateChange: RangePickerProps["onChange"] = (date) => {
-    updateTask({ _id: task._id, ...formatValues({ date }) }).then(() => {
-      notification.success({ message: "修改成功" });
-    });
+    // updateTask({ _id: task._id, ...formatValues({ date }) }).then(() => {
+    //   notification.success({ message: "修改成功" });
+    // });
   };
 
   return (
@@ -138,7 +131,7 @@ const Task: React.FC<
             ref={provided.innerRef}
             {...provided.draggableProps}
             {...provided.dragHandleProps}
-            onClick={handleUpdateTask}
+            onClick={() => handleEditTask(task)}
           >
             <Row gutter={10} wrap={false} onClick={(e) => e.stopPropagation()}>
               <Col>
@@ -164,27 +157,17 @@ const Task: React.FC<
                   color="processing"
                   // danger={dayjs(task.endTime).isBefore(dayjs())}
                 >
-                  {task.startTime} ~ {task.endTime}
+                  {task.developStartAt} ~ {task.developEndAt}
                 </Tag>
               </Space>
-              <Col onClick={(e) => e.stopPropagation()}>
-                {/* <RangePicker
-                  style={{ width: 200 }}
-                  size="small"
-                  defaultValue={[dayjs(task.startTime), dayjs(task.endTime)]}
-                  onChange={handelTaskDateChange}
-                  bordered={false}
-                  allowClear={false}
-                  suffixIcon={null}
-                /> */}
-              </Col>
+              <Col onClick={(e) => e.stopPropagation()}></Col>
             </Row>
             <Row justify="space-between">
               <Col>
                 <Space align="center">
                   <Avatar.Group size="small" style={{ marginTop: 4 }}>
                     {developer?.map((item) => (
-                      <Avatar key={item.value}>{item.label}</Avatar>
+                      <Avatar key={item.id}>{item.label}</Avatar>
                     ))}
                   </Avatar.Group>
 
@@ -197,7 +180,11 @@ const Task: React.FC<
                 </Space>
               </Col>
               <Col onClick={(e) => e.stopPropagation()}>
-                <Dropdown placement="bottomLeft" menu={{ items }}>
+                <Dropdown
+                  placement="bottomLeft"
+                  trigger={["click"]}
+                  menu={{ items }}
+                >
                   <Button type="text" icon={<EllipsisOutlined />} />
                 </Dropdown>
               </Col>

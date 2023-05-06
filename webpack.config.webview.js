@@ -10,9 +10,14 @@ const path = require("path");
 /** @type WebpackConfig */
 const config = {
   mode: "development",
+  devtool: "source-map",
   entry: "./src/webview/main.tsx",
   output: {
     path: path.join(__dirname, "webview"),
+  },
+  target: "web",
+  resolve: {
+    extensions: [".ts", ".tsx", "..."],
   },
   module: {
     rules: [

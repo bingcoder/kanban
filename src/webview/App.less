@@ -9,20 +9,24 @@
 } */
 
 body {
-  background-color: #eee;
+  // background-color: #eee;
 }
 
 .task-app-header {
-  padding: 10px 24px;
-  background-color: #fff;
+  padding: 10px 0;
+  // TODO
+  // background-color: #fff;
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
+  > .ant-row {
+    margin: 0 24px;
+  }
 }
 
 .task-container {
-  padding: 64px 24px 0px;
+  padding: 64px 16px 0;
   align-items: stretch;
 }
 
@@ -32,7 +36,8 @@ body {
   flex-direction: column;
   border-radius: 6px;
   height: calc(100vh - 80px);
-  background-color: #eee;
+  // TODO
+  // background-color: #eee;
 }
 
 .task-columns .task-columns-title {
@@ -57,7 +62,8 @@ body {
   padding: 16px;
   border-radius: 6px;
   margin-bottom: 10px;
-  background-color: #fff;
+  // TODO color
+  // background-color: #fff;
   .task-card-title {
     font-size: 14px;
     font-weight: normal;
@@ -70,4 +76,8 @@ body {
       color: #787c8a;
     }
   }
+}
+
+.status-draggable-item {
+  margin-bottom: 8px;
 }

@@ -1,37 +1,40 @@
-import { useMount, useRequest } from "ahooks";
+import { useMount } from "ahooks";
 import { Space } from "antd";
-import { useEffect } from "react";
 import { DragDropContext, DropResult } from "react-beautiful-dnd";
 import Header from "./components/Header";
 import TaskColumn from "./components/TaskColumn";
-import { MessageData, TaskStatus } from "./constants";
-import { useDeveloperList, useStatusList, useTaskList } from "./state";
-import { useAddTask } from "./utils/hooks";
+import { useKanban, useStatus, useTask } from "./state";
 import { modifyTaskStatus } from "./utils/request";
+import "./App.less";
+import { WebviewReceiveMessage } from "../constants";
 
 function Main() {
-  const { tasks, updateTasks } = useTaskList();
-  const { status, updateStatus } = useStatusList();
-  const { developer, updateDeveloper } = useDeveloperList();
-  const handleAddTask = useAddTask();
+  const { tasks, updateTasks, updateTask, getTasks } = useTask();
+  const { statusColumns } = useStatus();
+
+  console.log(tasks);
+
+  const { updateKanban } = useKanban();
 
   useMount(() => {
-    const updater = {
-      tasks: updateTasks,
-      status: updateStatus,
-      developer: updateDeveloper,
-    };
-    window.addEventListener("message", (e: MessageEvent<MessageData>) => {
-      const message = e.data;
-      switch (message.command) {
-        case "setState":
-          updater[message.key](message.payload);
-          break;
+    getTasks();
+    window.addEventListener(
+      "message",
+      (e: MessageEvent<WebviewReceiveMessage>) => {
+        const message = e.data;
+        switch (message.command) {
+          case "updateKanban":
+            updateKanban(message.payload);
+            break;
+          case "updateTasks":
+            updateTasks(message.payload);
+            break;
 
-        default:
-          break;
+          default:
+            break;
+        }
       }
-    });
+    );
   });
 
   const handleDragEnd = (result: DropResult) => {
@@ -45,41 +48,35 @@ function Main() {
       ) {
         return;
       }
-      const sourceList = tasks?.[source.droppableId as TaskStatus] || [];
-      const destinationList =
-        tasks?.[destination!.droppableId as TaskStatus] || [];
+      const sourceList = tasks?.[source.droppableId] || [];
+      const destinationList = tasks?.[destination!.droppableId] || [];
 
       const task = sourceList.splice(source.index, 1)[0];
-      task.status = destination.droppableId as TaskStatus;
+      task.status = destination.droppableId;
       destinationList.splice(destination?.index!, 0, task);
       updateTasks({
         ...(tasks || {}),
-        [source.droppableId as TaskStatus]: sourceList,
-        [destination?.droppableId as TaskStatus]: destinationList,
+        [source.droppableId]: sourceList,
+        [destination?.droppableId]: destinationList,
       } as typeof tasks);
-      modifyTaskStatus({
+      updateTask({
         _id: draggableId,
-        status: destination.droppableId as TaskStatus,
+        status: destination.droppableId,
       });
     }
   };
-  const handelExtra = (status: TaskStatus) => {
-    if (status === TaskStatus.ToBeDeveloped) {
-      handleAddTask();
-    }
-  };
+
   return (
     <>
       <Header />
       <DragDropContext onDragEnd={handleDragEnd}>
         <Space className="task-container" size="middle">
-          {status.map((column) => (
+          {statusColumns.map((column) => (
             <TaskColumn
-              key={column.value}
+              key={column.id}
               title={column.label}
-              status={column.value}
-              data={tasks?.[column.value]}
-              handelExtra={handelExtra}
+              status={column.id}
+              data={tasks?.[column.id]}
             />
           ))}
         </Space>

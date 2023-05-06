@@ -1,40 +1,94 @@
 import { create } from "zustand";
-import { ConfigOption, TaskRecord, TaskStatus } from "./constants";
+import {
+  AddStatus,
+  Kanban,
+  TaskRecord,
+  ConfigOption,
+  UpdateStatusMessage,
+  UpdateDeveloperMessage,
+  AddTaskRequestMessage,
+  UpdateTaskRequestMessage,
+  MessagePayload,
+  GetTasksRequestMessage,
+} from "../constants";
 
-export const useTaskList = create<{
-  tasks: Record<TaskStatus, TaskRecord[]>;
+const vscode = window.acquireVsCodeApi();
+
+export const useKanban = create<{
+  kanban: Kanban;
+  updateKanban: (kanban: Kanban) => void;
+  updateStatus: (status: ConfigOption[]) => void;
+  updateDeveloper: (developer: ConfigOption[]) => void;
+}>((set, get) => ({
+  kanban: window.vscKanban,
+  updateKanban(kanban) {
+    set({ kanban });
+  },
+  updateStatus(status) {
+    vscode.postMessage(
+      new UpdateStatusMessage({
+        _id: get().kanban._id,
+        status,
+      })
+    );
+  },
+  updateDeveloper(developer) {
+    vscode.postMessage(
+      new UpdateDeveloperMessage({
+        _id: get().kanban._id,
+        developer,
+      })
+    );
+  },
+}));
+
+export const useTask = create<{
+  tasks: Record<string, TaskRecord[]>;
   updateTasks: (tasks: any) => void;
+  addTask: (
+    task: Omit<MessagePayload<AddTaskRequestMessage>, "kanban">
+  ) => void;
+  updateTask: (task: MessagePayload<UpdateTaskRequestMessage>) => void;
+  getTasks: () => void;
 }>((set) => ({
   tasks: {} as any,
-  updateTasks(taskList: TaskRecord[]) {
-    const taskMap: any = {};
-    taskList.forEach((item) => {
-      if (taskMap[item.status]) {
-        taskMap[item.status].push(item);
-      } else {
-        taskMap[item.status] = [item];
-      }
-    });
-    set({ tasks: taskMap });
+  updateTasks(tasks) {
+    set({ tasks });
+  },
+  addTask(task) {
+    vscode.postMessage(
+      new AddTaskRequestMessage({
+        ...task,
+        kanban: useKanban.getState().kanban._id,
+      })
+    );
+  },
+  updateTask(task) {
+    vscode.postMessage(new UpdateTaskRequestMessage(task));
+  },
+  // updateTaskStatus(task) {
+  //   vscode.postMessage(new UpdateTaskRequestMessage(task));
+  // },
+  getTasks() {
+    vscode.postMessage(
+      new GetTasksRequestMessage({
+        _id: useKanban.getState().kanban._id,
+      })
+    );
   },
 }));
 
-export const useStatusList = create<{
-  status: ConfigOption[];
-  updateStatus: (statusList: ConfigOption[]) => void;
-}>((set) => ({
-  status: [],
-  updateStatus(status) {
-    set({ status });
-  },
-}));
+export function useStatus() {
+  return useKanban(({ kanban, updateStatus }) => ({
+    status: kanban.status,
+    statusColumns: [...(kanban.status || []), AddStatus],
+    updateStatus,
+  }));
+}
 
-export const useDeveloperList = create<{
-  developer: ConfigOption[];
-  updateDeveloper: (developer: ConfigOption[]) => void;
-}>((set) => ({
-  developer: [],
-  updateDeveloper(developer) {
-    set({ developer });
-  },
-}));
+export function useDeveloper() {
+  return useKanban(({ kanban, updateDeveloper }) => ({
+    developer: kanban.developer || [],
+    updateDeveloper,
+  }));
+}

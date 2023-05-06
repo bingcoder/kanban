@@ -1,7 +1,21 @@
 // @ts-ignore
-const vscode = acquireVsCodeApi();
+const vscode = { postMessage: (a: any) => {} };
 
-import { StatusRecord, TaskRecord, TaskStatus } from "../constants";
+import { ConfigOption, TaskRecord } from "../../constants";
+
+export function updateStatus(data: ConfigOption[]) {
+  vscode.postMessage({
+    command: "updateStatus",
+    data,
+  });
+}
+
+export function updateDeveloper(data: ConfigOption[]) {
+  vscode.postMessage({
+    command: "updateDeveloper",
+    data,
+  });
+}
 
 export function getTasks() {
   vscode.postMessage({
@@ -9,7 +23,7 @@ export function getTasks() {
   });
 }
 
-export function modifyTaskStatus(data: { _id: string; status: TaskStatus }) {
+export function modifyTaskStatus(data: { _id: string; status: string }) {
   vscode.postMessage({
     command: "modifyTaskStatus",
     data,
@@ -17,7 +31,7 @@ export function modifyTaskStatus(data: { _id: string; status: TaskStatus }) {
 }
 
 export function addTask(data: {
-  status: TaskStatus;
+  status: string;
   startTime: string;
   endTime: string;
   developer: number[];

@@ -1,8 +1,2 @@
-{"title":"默认","_id":"KKI6JEwVUxMFXbiP"}
-{"title":"new board 嘻嘻嘻打发士大夫的","_id":"WY5hiZy5H323a9D0"}
-{"title":"测试","_id":"kp71l7orZQ245zge"}
-{"$$deleted":true,"_id":"WY5hiZy5H323a9D0"}
-{"$$deleted":true,"_id":"KKI6JEwVUxMFXbiP"}
-{"$$deleted":true,"_id":"kp71l7orZQ245zge"}
-{"title":"测试3","createTime":"2023-04-07","_id":"W879XKTtbvh03m7H"}
-{"title":"测试2","createTime":"2023-04-07","_id":"gPIB71j4Xgkj6vRm"}
+{"title":"测试二","status":[],"developer":[],"_id":"IWPPLRroBzGc993n","createdAt":{"$$date":1680978533832},"updatedAt":{"$$date":1680978533832}}
+{"title":"ceshi","createTime":"2023-04-09","status":[{"id":"spegbivjkl","label":"待开发"},{"id":"kljacuqhse","label":"开发中"},{"id":"ctkbtmhgxu","label":"开发完"},{"id":"vbqilfxajn","label":"待联调"},{"id":"adzueukxpf","label":"待测试"},{"id":"zxomdmreqh","label":"测试中"}],"developer":[{"id":"aqihddgdoq","label":"刘健"}],"_id":"OPdyWO2ZSZvFS8M7","createdAt":{"$$date":1680972856338},"updatedAt":{"$$date":1680976425410}}

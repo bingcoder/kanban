@@ -5,51 +5,53 @@ import {
   DroppableStateSnapshot,
 } from "react-beautiful-dnd";
 import classNames from "classnames";
-import { TaskRecord, TaskStatus } from "../constants";
+import { AddStatus, TaskRecord } from "../../constants";
 import Task from "./Task";
-import { tasks } from "../tasks";
-import { useTaskList } from "../state";
 import { useMemo } from "react";
 import { PlusOutlined } from "@ant-design/icons";
+import { useAddTask, useEditStatus } from "../hooks";
 
 const { Title, Text } = Typography;
-
-const extraMap: any = {
-  [TaskStatus.ToBeDeveloped]: <PlusOutlined />,
-};
 
 const TaskColumn: React.FC<
   React.PropsWithChildren<{
     title: string;
-    status: TaskStatus;
+    status: string;
     data?: Array<TaskRecord>;
-    handelExtra?: (status: TaskStatus) => void;
   }>
 > = (props) => {
-  const { title, status, data = [], handelExtra } = props;
+  const { title, status, data = [] } = props;
 
-  const extra = useMemo(() => {
-    return extraMap[status];
-  }, [status]);
+  const handleEditStatus = useEditStatus();
+  const handleAddTask = useAddTask(status);
+
+  const header = useMemo(() => {
+    if (status === AddStatus.id) {
+      return (
+        <Button type="text" icon={<PlusOutlined />} onClick={handleEditStatus}>
+          添加状态
+        </Button>
+      );
+    }
+    return (
+      <>
+        <Title level={5}>
+          {title}
+          <Text type="secondary" style={{ marginLeft: 10 }}>
+            {data?.length}
+          </Text>
+        </Title>
+        <Button type="text" icon={<PlusOutlined />} onClick={handleAddTask} />
+      </>
+    );
+  }, [status, title, data]);
 
   return (
     <Droppable droppableId={status}>
       {(provided: DroppableProvided, snapshot: DroppableStateSnapshot) => (
         <div className="task-columns">
           <Row justify="space-between" className="task-columns-title">
-            <Title level={5}>
-              {title}{" "}
-              <Text type="secondary" style={{ marginLeft: 10 }}>
-                {data?.length}
-              </Text>
-            </Title>
-            {extra && (
-              <Button
-                type="text"
-                icon={extra}
-                onClick={() => handelExtra?.(status)}
-              />
-            )}
+            {header}
           </Row>
           <div
             className={classNames("task-droppable-container", {
