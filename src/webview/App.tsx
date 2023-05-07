@@ -1,40 +1,30 @@
 import { useMount } from "ahooks";
-import { Space } from "antd";
+import { Space, App, theme } from "antd";
 import { DragDropContext, DropResult } from "react-beautiful-dnd";
-import Header from "./components/Header";
+import Header from "./modules/Header";
 import TaskColumn from "./components/TaskColumn";
 import { useKanban, useStatus, useTask } from "./state";
-import { modifyTaskStatus } from "./utils/request";
 import "./App.less";
-import { WebviewReceiveMessage } from "../constants";
+import { KanbanMessage, ResponseMessage } from "../constants";
 
-function Main() {
-  const { tasks, updateTasks, updateTask, getTasks } = useTask();
+function MainApp() {
+  const { token } = theme.useToken();
+  const { tasks, getTasks, updateTasks, updateTaskStatus } = useTask();
   const { statusColumns } = useStatus();
+  const { kanban, updateKanban } = useKanban();
 
   console.log(tasks);
 
-  const { updateKanban } = useKanban();
-
   useMount(() => {
-    getTasks();
-    window.addEventListener(
-      "message",
-      (e: MessageEvent<WebviewReceiveMessage>) => {
-        const message = e.data;
-        switch (message.command) {
-          case "updateKanban":
-            updateKanban(message.payload);
-            break;
-          case "updateTasks":
-            updateTasks(message.payload);
-            break;
-
-          default:
-            break;
-        }
+    const handler = {
+      refreshTasksResponse: updateTasks,
+    };
+    window.addEventListener("message", (e: MessageEvent<ResponseMessage>) => {
+      const message = e.data;
+      if (message?.source === KanbanMessage.source) {
+        handler[message.command]?.(message.payload);
       }
-    );
+    });
   });
 
   const handleDragEnd = (result: DropResult) => {
@@ -59,7 +49,7 @@ function Main() {
         [source.droppableId]: sourceList,
         [destination?.droppableId]: destinationList,
       } as typeof tasks);
-      updateTask({
+      updateTaskStatus({
         _id: draggableId,
         status: destination.droppableId,
       });
@@ -67,10 +57,13 @@ function Main() {
   };
 
   return (
-    <>
+    <App style={{ backgroundColor: token.colorBgContainer }}>
       <Header />
       <DragDropContext onDragEnd={handleDragEnd}>
-        <Space className="task-container" size="middle">
+        <div
+          className="task-container"
+          style={{ backgroundColor: token.colorBgLayout }}
+        >
           {statusColumns.map((column) => (
             <TaskColumn
               key={column.id}
@@ -79,10 +72,10 @@ function Main() {
               data={tasks?.[column.id]}
             />
           ))}
-        </Space>
+        </div>
       </DragDropContext>
-    </>
+    </App>
   );
 }
 
-export default Main;
+export default MainApp;

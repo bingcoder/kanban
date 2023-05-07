@@ -1,34 +1,36 @@
 import {
-  Draggable,
-  DraggableProvided,
-  DraggableStateSnapshot,
-} from "react-beautiful-dnd";
+  BorderOutlined,
+  CalendarOutlined,
+  CaretDownOutlined,
+  EllipsisOutlined,
+  FieldTimeOutlined,
+  TeamOutlined,
+} from "@ant-design/icons";
 import {
-  Avatar,
   Button,
+  Card,
   Col,
-  DatePicker,
   Dropdown,
   MenuProps,
   Popconfirm,
   Progress,
   Row,
   Space,
-  Tag,
   Typography,
 } from "antd";
 import {
-  BorderOutlined,
-  CaretDownOutlined,
-  EllipsisOutlined,
-} from "@ant-design/icons";
+  Draggable,
+  DraggableProvided,
+  DraggableStateSnapshot,
+} from "react-beautiful-dnd";
 
-import { useMemo } from "react";
 import { useBoolean } from "ahooks";
-import { useDeveloper, useStatus } from "../state";
-import { RangePickerProps } from "antd/es/date-picker";
+import { useMemo } from "react";
 import { TaskRecord } from "../../constants";
-import { useEditStatus, useEditTask } from "../hooks";
+import { useEditTask } from "../hooks";
+import { useDeveloper, useStatus, useTask } from "../state";
+
+const { Text } = Typography;
 
 const TaskSelector: React.FC<{
   onClick: MenuProps["onClick"];
@@ -68,6 +70,7 @@ const Task: React.FC<
   const { status } = useStatus();
   const { developer: developerList } = useDeveloper();
   const handleEditTask = useEditTask();
+  const updateTaskStatus = useTask((s) => s.updateTaskStatus);
 
   const items: MenuProps["items"] = useMemo(() => {
     return [
@@ -111,27 +114,23 @@ const Task: React.FC<
     if (info.key === task.status) {
       return;
     }
-    // updateTask({ _id: task._id, status: info.key }).then(() => {
-    //   getTasks();
-    // });
-  };
-
-  const handelTaskDateChange: RangePickerProps["onChange"] = (date) => {
-    // updateTask({ _id: task._id, ...formatValues({ date }) }).then(() => {
-    //   notification.success({ message: "修改成功" });
-    // });
+    updateTaskStatus({
+      _id: task._id,
+      status: info.key,
+    });
   };
 
   return (
     <Draggable draggableId={task._id} index={index}>
       {(provided: DraggableProvided, snapshot: DraggableStateSnapshot) => {
         return (
-          <div
+          <Card
             className="task-card"
             ref={provided.innerRef}
             {...provided.draggableProps}
             {...provided.dragHandleProps}
             onClick={() => handleEditTask(task)}
+            bodyStyle={{ padding: 16 }}
           >
             <Row gutter={10} wrap={false} onClick={(e) => e.stopPropagation()}>
               <Col>
@@ -151,34 +150,30 @@ const Task: React.FC<
                 </Typography.Title>
               </Col>
             </Row>
-            <Row style={{ marginBottom: 10 }}>
+            <Row style={{ marginLeft: 32, marginBottom: 4 }}>
               <Space>
-                <Tag
-                  color="processing"
-                  // danger={dayjs(task.endTime).isBefore(dayjs())}
-                >
-                  {task.developStartAt} ~ {task.developEndAt}
-                </Tag>
+                <CalendarOutlined />
+                <Text type="secondary">
+                  {task.developStartAt} - {task.developEndAt}
+                </Text>
               </Space>
-              <Col onClick={(e) => e.stopPropagation()}></Col>
             </Row>
-            <Row justify="space-between">
-              <Col>
-                <Space align="center">
-                  <Avatar.Group size="small" style={{ marginTop: 4 }}>
-                    {developer?.map((item) => (
-                      <Avatar key={item.id}>{item.label}</Avatar>
-                    ))}
-                  </Avatar.Group>
-
-                  <Progress
-                    type="circle"
-                    percent={task.progress}
-                    size={26}
-                    // format={(f) => f}
-                  />
-                </Space>
-              </Col>
+            <Row style={{ marginLeft: 32 }}>
+              <Space>
+                <TeamOutlined />
+                <Text>{developer?.map((item) => item.label).join("、")}</Text>
+              </Space>
+            </Row>
+            <Row style={{ marginLeft: 32 }} justify="space-between">
+              <Space>
+                <FieldTimeOutlined />
+                <Progress
+                  size={[16, 6]}
+                  steps={5}
+                  style={{ marginBottom: 6 }}
+                  percent={task.progress}
+                />
+              </Space>
               <Col onClick={(e) => e.stopPropagation()}>
                 <Dropdown
                   placement="bottomLeft"
@@ -189,7 +184,7 @@ const Task: React.FC<
                 </Dropdown>
               </Col>
             </Row>
-          </div>
+          </Card>
         );
       }}
     </Draggable>

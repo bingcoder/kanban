@@ -4,7 +4,7 @@ import {
   GetTasksRequestMessage,
   MessagePayload,
   UpdateStatusMessage,
-} from "../../constants";
+} from "../constants";
 
 const kanbanDb = new NeDb({
   filename: "db/kanban.db",

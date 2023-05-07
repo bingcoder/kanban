@@ -56,7 +56,7 @@ const ModifyForm: React.FC<{ form: FormInstance<TaskFormValues> }> = ({
         />
       </Form.Item>
       <Form.Item label="进度" name="progress">
-        <Slider step={10} />
+        <Slider step={20} />
       </Form.Item>
     </Form>
   );

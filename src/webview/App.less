@@ -8,76 +8,72 @@
   min-height: 100vh;
 } */
 
-body {
-  // background-color: #eee;
+#root {
+  height: 100%;
+}
+
+.ant-app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .task-app-header {
-  padding: 10px 0;
-  // TODO
-  // background-color: #fff;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  > .ant-row {
-    margin: 0 24px;
-  }
+  padding: 10px 16px;
 }
 
 .task-container {
-  padding: 64px 16px 0;
-  align-items: stretch;
-}
-
-.task-columns {
-  width: 300px;
+  flex: 1;
+  padding: 0 16px 0;
+  background-color: #f7f7f7;
   display: flex;
-  flex-direction: column;
-  border-radius: 6px;
-  height: calc(100vh - 80px);
-  // TODO
-  // background-color: #eee;
-}
+  overflow: auto;
 
-.task-columns .task-columns-title {
-  padding: 10px;
-}
+  .task-columns {
+    width: 300px;
+    flex: 0 0 300px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 6px;
 
-.task-droppable-container {
-  height: 0;
-  flex-grow: 1;
-  padding: 10px;
-  border-radius: 6px;
-  overflow: hidden auto;
-  transition: background-color 0.3s ease;
-}
-
-.task-droppable-container-dragging-over {
-  // background-color: pink;
-  border: 2px solid #1677ff;
-}
-
-.task-card {
-  padding: 16px;
-  border-radius: 6px;
-  margin-bottom: 10px;
-  // TODO color
-  // background-color: #fff;
-  .task-card-title {
-    font-size: 14px;
-    font-weight: normal;
-    color: #000;
-  }
-  .ant-picker-range {
-    width: 220px;
-    margin-left: -6px;
-    input {
-      color: #787c8a;
+    .task-columns-title {
+      padding: 10px;
+      > h5 {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0;
+      }
+      .ant-btn-icon-only {
+        opacity: 0.5;
+      }
     }
   }
-}
 
-.status-draggable-item {
-  margin-bottom: 8px;
+  .task-droppable-container {
+    height: 0;
+    flex-grow: 1;
+    padding: 10px;
+    border-radius: 6px;
+    overflow: hidden auto;
+    transition: background-color 0.3s ease;
+  }
+
+  .task-droppable-container-dragging-over {
+    // background-color: pink;
+    border: 2px solid #1677ff;
+  }
+  .task-card {
+    margin-bottom: 10px;
+    .ant-picker-range {
+      width: 220px;
+      margin-left: -6px;
+      input {
+        color: #787c8a;
+      }
+    }
+  }
+
+  .status-draggable-item {
+    margin-bottom: 8px;
+  }
 }

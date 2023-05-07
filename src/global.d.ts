@@ -1,6 +1,8 @@
 interface Window {
+  dbAdapter: any;
   vscKanban: any;
-  acquireVsCodeApi: () => {
+  Nedb: any;
+  acquireVsCodeApi?: () => {
     postMessage: (message: any) => void;
   };
 }

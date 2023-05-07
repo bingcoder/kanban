@@ -1,40 +1,50 @@
-import { Button, Col, Divider, Input, Row, Space } from "antd";
+import { Button, Col, Divider, Input, Row, Space, theme } from "antd";
 import {
   AlignRightOutlined,
   BarsOutlined,
+  DashboardOutlined,
+  DownOutlined,
   EllipsisOutlined,
   FilterOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
+import { useAlgorithm } from "@/state";
 
 const Header = () => {
+  const { toggleAlgorithm: toggleTheme } = useAlgorithm();
   return (
-    <header className="task-app-header">
-      <Row wrap={false} justify="space-between">
-        <Col>
-          <Button type="text" icon={<AlignRightOutlined />}>
-            全部任务
+    <Row className="task-app-header" wrap={false} justify="space-between">
+      <Space>
+        <Button type="text" icon={<DashboardOutlined />}>
+          看板
+        </Button>
+        <Button type="text" icon={<AlignRightOutlined />}>
+          全部任务
+        </Button>
+      </Space>
+      <Col>
+        <Space>
+          <Input
+            size="small"
+            placeholder="搜索标题"
+            prefix={<SearchOutlined />}
+          />
+          <Button type="text" icon={<BarsOutlined />}>
+            按照创建时间
           </Button>
-        </Col>
-        <Col>
-          <Space>
-            <Input
-              size="small"
-              placeholder="搜索标题"
-              prefix={<SearchOutlined />}
-            />
-            <Button type="text" icon={<BarsOutlined />}>
-              按照创建时间
-            </Button>
-            <Button type="text" icon={<FilterOutlined />}>
-              筛选
-            </Button>
-            <Button type="text" icon={<EllipsisOutlined />} />
-          </Space>
-        </Col>
-      </Row>
-      <Divider style={{ margin: "10px 0 0" }} />
-    </header>
+          <Button type="text" icon={<FilterOutlined />}>
+            筛选
+          </Button>
+          <Button
+            type="text"
+            icon={<EllipsisOutlined />}
+            onClick={() => {
+              toggleTheme();
+            }}
+          />
+        </Space>
+      </Col>
+    </Row>
   );
 };
 

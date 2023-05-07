@@ -124,7 +124,7 @@
     "@octokit/rest": "^19.0.7",
     "@seald-io/nedb": "^4.0.1",
     "ahooks": "^3.7.6",
-    "antd": "^5.4.0",
+    "antd": "^5.4.7",
     "dayjs": "^1.11.7",
     "esbuild-loader": "^3.0.1",
     "nanoid": "^4.0.2",

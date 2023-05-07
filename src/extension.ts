@@ -13,6 +13,8 @@ import {
   MessagePayload,
   UpdateTasksResponseMessage,
   UpdateKanbanResponseMessage,
+  RequestMessage,
+  KanbanMessage,
 } from "./constants";
 
 interface TreeItem {
@@ -193,35 +195,6 @@ class KanbanView {
     await this.refreshWebviewKanban(_id);
   };
 
-  // 更新任务
-  refreshWebviewTasks = async (
-    payload: MessagePayload<GetTasksRequestMessage>
-  ) => {
-    const tasks = await this.taskDb
-      .findAsync({ kanban: payload._id })
-      .sort({ createdAt: 1 });
-    if (this.webviewPanel) {
-      const tasksMap: any = {};
-      tasks.forEach((item) => {
-        if (tasksMap[item.status]) {
-          tasksMap[item.status].push(item);
-        } else {
-          tasksMap[item.status] = [item];
-        }
-      });
-      this.webviewPanel.webview.postMessage(
-        new UpdateTasksResponseMessage(tasksMap)
-      );
-    }
-  };
-
-  addTask = async (payload: MessagePayload<AddTaskRequestMessage>) => {
-    await this.taskDb.insertAsync(payload as any);
-    await this.refreshWebviewTasks({ _id: payload.kanban });
-  };
-
-  updateTask = async (data: MessagePayload<UpdateTaskRequestMessage>) => {};
-
   openKanban = async (item: TreeItem) => {
     const columnToShowIn = vscode.window.activeTextEditor
       ? vscode.window.activeTextEditor.viewColumn
@@ -267,9 +240,11 @@ class KanbanView {
         </html>`;
 
       this.webviewPanel.webview.onDidReceiveMessage(
-        (message: VscodeReceiveMessage) => {
-          if (message.source === "vscKanban") {
-            this[message.command]?.(message.payload as any);
+        (message: RequestMessage) => {
+          if (message.source === KanbanMessage.source) {
+            console.log(message.command);
+
+            // this[message.command]?.(message.payload as any);
           }
         }
       );

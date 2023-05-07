@@ -17,6 +17,9 @@ const config = {
   },
   target: "web",
   resolve: {
+    alias: {
+      "@": path.resolve("src/webview"),
+    },
     extensions: [".ts", ".tsx", "..."],
   },
   module: {

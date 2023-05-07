@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { theme } from "antd";
 import {
   AddStatus,
   Kanban,
@@ -10,9 +11,47 @@ import {
   UpdateTaskRequestMessage,
   MessagePayload,
   GetTasksRequestMessage,
+  RefreshTasksRequestMessage,
+  UpdateTaskStatusRequestMessage,
 } from "../constants";
+import "./dbAdapter";
 
-const vscode = window.acquireVsCodeApi();
+const adapter = window.dbAdapter();
+
+export const useAlgorithm = create<{
+  algorithm: typeof theme.defaultAlgorithm;
+  updateTheme: (kanban: any) => void;
+  toggleAlgorithm: () => void;
+}>((set, get) => ({
+  algorithm: theme.defaultAlgorithm,
+  updateTheme(algorithm) {
+    set({ algorithm });
+  },
+  toggleAlgorithm() {
+    set({
+      algorithm:
+        get().algorithm === theme.defaultAlgorithm
+          ? theme.darkAlgorithm
+          : theme.defaultAlgorithm,
+    });
+  },
+}));
+
+export type SearchCondition = Partial<{
+  title: string;
+  developer: string[];
+  developEndAt: [string, string];
+}>;
+
+export const useSearchCondition = create<{
+  condition: SearchCondition;
+  updateSearchCondition: (condition: SearchCondition) => void;
+}>((set) => ({
+  condition: {},
+  updateSearchCondition(condition) {
+    set((s) => ({ condition: { ...s.condition, ...condition } }));
+  },
+}));
 
 export const useKanban = create<{
   kanban: Kanban;
@@ -25,7 +64,7 @@ export const useKanban = create<{
     set({ kanban });
   },
   updateStatus(status) {
-    vscode.postMessage(
+    adapter.postMessage(
       new UpdateStatusMessage({
         _id: get().kanban._id,
         status,
@@ -33,7 +72,7 @@ export const useKanban = create<{
     );
   },
   updateDeveloper(developer) {
-    vscode.postMessage(
+    adapter.postMessage(
       new UpdateDeveloperMessage({
         _id: get().kanban._id,
         developer,
@@ -49,6 +88,9 @@ export const useTask = create<{
     task: Omit<MessagePayload<AddTaskRequestMessage>, "kanban">
   ) => void;
   updateTask: (task: MessagePayload<UpdateTaskRequestMessage>) => void;
+  updateTaskStatus: (
+    payload: MessagePayload<UpdateTaskStatusRequestMessage>
+  ) => void;
   getTasks: () => void;
 }>((set) => ({
   tasks: {} as any,
@@ -56,7 +98,7 @@ export const useTask = create<{
     set({ tasks });
   },
   addTask(task) {
-    vscode.postMessage(
+    adapter.postMessage(
       new AddTaskRequestMessage({
         ...task,
         kanban: useKanban.getState().kanban._id,
@@ -64,14 +106,15 @@ export const useTask = create<{
     );
   },
   updateTask(task) {
-    vscode.postMessage(new UpdateTaskRequestMessage(task));
+    adapter.postMessage(new UpdateTaskRequestMessage(task));
   },
-  // updateTaskStatus(task) {
-  //   vscode.postMessage(new UpdateTaskRequestMessage(task));
-  // },
+  updateTaskStatus(payload) {
+    adapter.postMessage(new UpdateTaskStatusRequestMessage(payload));
+  },
   getTasks() {
-    vscode.postMessage(
-      new GetTasksRequestMessage({
+    adapter.postMessage(
+      new RefreshTasksRequestMessage({
+        ...useSearchCondition.getState().condition,
         _id: useKanban.getState().kanban._id,
       })
     );
