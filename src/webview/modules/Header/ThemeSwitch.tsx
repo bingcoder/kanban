@@ -1,7 +1,6 @@
 import Moon from "@/icons/Moon";
 import Sun from "@/icons/Sun";
 import { useAlgorithm } from "@/state";
-import { AudioMutedOutlined, AudioOutlined } from "@ant-design/icons";
 import { Button, theme } from "antd";
 import { useMemo } from "react";
 

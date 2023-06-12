@@ -7,6 +7,7 @@ import {
 import {
   CalendarOutlined,
   FilterOutlined,
+  ReloadOutlined,
   TeamOutlined,
 } from "@ant-design/icons";
 import {
@@ -19,19 +20,18 @@ import {
   Row,
   Select,
   Space,
-  Typography,
   theme,
 } from "antd";
 import { useEffect, useMemo } from "react";
 
 const SearchSwitch = () => {
   const { developer } = useDeveloper();
-  const { getTasks } = useTask();
+  const { refreshTasks } = useTask();
   const { condition, updateSearchCondition } = useSearchCondition();
   const { token } = theme.useToken();
 
   useEffect(() => {
-    getTasks();
+    refreshTasks();
   }, [condition]);
 
   const handleValuesChange: FormProps["onValuesChange"] = (
@@ -127,17 +127,25 @@ const SearchSwitch = () => {
               </Space>
             </Row>
             <Row justify="end">
-              <Button type="link">保存为条件</Button>
+              <Button
+                type="text"
+                icon={<ReloadOutlined />}
+                onClick={() => refreshTasks()}
+              />
+              <Button type="text">保存为条件</Button>
             </Row>
           </Space>
         </Form>
       }
     >
-      <Badge count={count} size="small" offset={[-8, 6]}>
-        <Button type="text" icon={<FilterOutlined />}>
-          筛选
-        </Button>
-      </Badge>
+      <Button type="text" icon={<FilterOutlined />}>
+        筛选
+        <Badge
+          count={count}
+          size="small"
+          style={{ marginLeft: 4, marginBottom: 4, backgroundColor: "#faad14" }}
+        />
+      </Button>
     </Popover>
   );
 };

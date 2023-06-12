@@ -1,77 +1,133 @@
-// @ts-ignore
-const vscode = { postMessage: (a: any) => {} };
+import {
+  AddTaskRequestMessage,
+  AddTaskResponseMessage,
+  DeleteTaskRequestMessage,
+  DeleteTaskResponseMessage,
+  GetKanbanRequestMessage,
+  KanbanMessage,
+  RequestMessage,
+  ResponseMessage,
+  UpdateKanbanDeveloperRequestMessage,
+  UpdateKanbanStatusRequestMessage,
+  UpdateKanbanStatusResponseMessage,
+  UpdateTaskRequestMessage,
+  UpdateTaskResponseMessage,
+  UpdateTaskStatusRequestMessage,
+  UpdateTaskStatusResponseMessage,
+} from "../../constants";
+import { DbAdapter } from "../../adapter";
 
-import { ConfigOption, TaskRecord } from "../../constants";
+import "@/lib/nedb";
+import { RefreshTasksRequestMessage } from "../../constants";
+import { RefreshTasksResponseMessage } from "../../constants";
 
-export function updateStatus(data: ConfigOption[]) {
-  vscode.postMessage({
-    command: "updateStatus",
-    data,
+class PostMessagePromise {
+  readonly dataMap: any = {};
+  constructor() {
+    window.addEventListener("message", (e: MessageEvent<ResponseMessage>) => {
+      const message = e.data;
+
+      if (message?.source === KanbanMessage.source) {
+        console.log("response====>", message.command);
+        // TODO reject
+        this.dataMap[message.command].resolve(message.payload);
+      }
+    });
+  }
+}
+
+const postMessagePromise = new PostMessagePromise();
+
+const isVscode = "acquireVsCodeApi" in window;
+
+if (!isVscode) {
+  // web 环境
+  const kanbanDb = new window.Nedb({
+    filename: "db/kanban.db",
+    autoload: true,
+    timestampData: true,
+  });
+
+  const taskDb = new window.Nedb({
+    filename: "db/task.db",
+    autoload: true,
+    timestampData: true,
+  });
+  // @ts-ignore
+  window.kanbanDb = kanbanDb;
+
+  const adapter = new DbAdapter({
+    kanbanDb,
+    taskDb,
+    webview: window,
+  });
+
+  document.addEventListener("kanbanMessage", (e: any) => {
+    if (e.detail?.source === "vscKanban") {
+      const { command, payload } = e.detail;
+      const commander = adapter[command as keyof typeof adapter];
+      if (typeof commander === "function") {
+        commander(payload);
+      }
+    }
   });
 }
 
-export function updateDeveloper(data: ConfigOption[]) {
-  vscode.postMessage({
-    command: "updateDeveloper",
-    data,
-  });
-}
+const vscode = window.acquireVsCodeApi?.();
 
-export function getTasks() {
-  vscode.postMessage({
-    command: "getTasks",
-  });
-}
+// 检查key是否符合
+const dbAdapter = new DbAdapter({} as any);
 
-export function modifyTaskStatus(data: { _id: string; status: string }) {
-  vscode.postMessage({
-    command: "modifyTaskStatus",
-    data,
-  });
-}
+const adapter = {
+  postMessage<T extends ResponseMessage>(data: RequestMessage) {
+    return new Promise<T["payload"]>((resolve, reject) => {
+      const commander = dbAdapter[data.command as keyof typeof dbAdapter];
+      // console.log("request===>", data.command, data.payload);
 
-export function addTask(data: {
-  status: string;
-  startTime: string;
-  endTime: string;
-  developer: number[];
-}) {
-  vscode.postMessage({
-    command: "addTask",
-    data,
-  });
-}
+      if (typeof commander !== "function") {
+        return reject(`web adapter command ${data.command} is not exist`);
+      }
+      if (isVscode && vscode) {
+        vscode.postMessage(data);
+      } else {
+        const kanbanEvent = new CustomEvent("kanbanMessage", { detail: data });
+        document.dispatchEvent(kanbanEvent);
+      }
+      setTimeout(() => {
+        reject(`${data.command} 请求超时！`);
+      }, 10000);
+      postMessagePromise.dataMap[data.command] = {
+        resolve,
+        reject,
+      };
+    });
+    // TODO 统一处理异常
+  },
+};
 
-export function deleteTask(data: string) {
-  vscode.postMessage({
-    command: "deleteTask",
-    data,
-  });
-}
+export const getKanban = () =>
+  adapter.postMessage(new GetKanbanRequestMessage());
 
-export function updateTask(data: Partial<TaskRecord>) {
-  vscode.postMessage({
-    command: "deleteTask",
-    data,
-  });
-}
+export const addTaskService = (params: AddTaskRequestMessage) =>
+  adapter.postMessage<AddTaskResponseMessage>(params);
 
-// export function getOptions(key: ConfigKey) {
-//   if (key === "status") return config[key].findAsync({}).sort({ value: 1 });
-//   return config[key].findAsync({});
-// }
+export const refreshTasksService = (params: RefreshTasksRequestMessage) =>
+  adapter.postMessage<RefreshTasksResponseMessage>(params);
 
-// export function addOption(key: ConfigKey, option: ConfigOption) {
-//   return config[key].insertAsync(option);
-// }
+export const updateTaskStatusService = (
+  params: UpdateTaskStatusRequestMessage
+) => adapter.postMessage<UpdateTaskStatusResponseMessage>(params);
 
-// export function removeOption(key: ConfigKey, _id: string) {
-//   return config[key].removeAsync({ _id }, { multi: false });
-// }
+export const updateTaskService = (params: UpdateTaskRequestMessage) =>
+  adapter.postMessage<UpdateTaskResponseMessage>(params);
 
-// export function updateOption(
-//   key: ConfigKey,
-//   { _id, ...option }: Partial<ConfigOption> & { _id: string }
-// ) {
-//   return config[key].updateAsync({ _id }, { $set: option });
-// }
+export const deleteTaskService = (params: DeleteTaskRequestMessage) =>
+  adapter.postMessage<DeleteTaskResponseMessage>(params);
+
+export const updateKanbanDeveloperService = (
+  params: UpdateKanbanDeveloperRequestMessage
+) => adapter.postMessage<UpdateKanbanStatusResponseMessage>(params);
+
+export const updateKanbanStatusService = (
+  params: UpdateKanbanStatusRequestMessage
+) => adapter.postMessage<UpdateKanbanStatusResponseMessage>(params);

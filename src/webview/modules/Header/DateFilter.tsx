@@ -1,13 +1,5 @@
-import {
-  AlignRightOutlined,
-  BarsOutlined,
-  DashboardOutlined,
-  FilterOutlined,
-  PlusOutlined,
-  SortAscendingOutlined,
-} from "@ant-design/icons";
-import { Button, Divider, Dropdown, Row, Segmented, Space, theme } from "antd";
-import React from "react";
+import { SortAscendingOutlined } from "@ant-design/icons";
+import { Button, Dropdown, Row, Segmented } from "antd";
 
 const SearchSwitch = () => {
   return (

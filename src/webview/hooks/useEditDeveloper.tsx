@@ -1,23 +1,23 @@
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
-import { App, Button, Col, Form, Input, Row } from "antd";
+import { App, Button, Form, Input, Row } from "antd";
 import { useCallback } from "react";
-import { useDeveloper, useTask } from "../state";
-import { fakeResolve, uuid } from "../utils";
+import { useDeveloper } from "../state";
+import { uuid } from "../utils";
 
 export function useEditDeveloper() {
   const [form] = Form.useForm();
   const { modal } = App.useApp();
-  const { developer } = useDeveloper();
+  const { developer, updateKanbanDevelopers } = useDeveloper();
 
   const handleEditDeveloper = useCallback(() => {
     form.setFieldsValue({
       developer,
     });
     modal.confirm({
-      title: "修改开发人员",
       icon: null,
+      title: "修改开发人员",
       content: (
-        <Form form={form} style={{ marginTop: 16 }}>
+        <Form form={form}>
           <Form.List name="developer">
             {(fields, { add, remove }, { errors }) => (
               <>
@@ -76,18 +76,7 @@ export function useEditDeveloper() {
       ),
       async onOk() {
         const { developer } = await form.validateFields();
-        console.log(developer);
-        return Promise.reject();
-
-        // updateTask({
-        //   ...task,
-        //   title,
-        //   status,
-        //   ...formatDevelopDateValues(developDate),
-        //   developer,
-        //   progress,
-        // });
-        return fakeResolve();
+        return updateKanbanDevelopers(developer);
       },
     });
   }, [developer]);

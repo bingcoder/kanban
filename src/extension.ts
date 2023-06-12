@@ -2,17 +2,9 @@ import * as vscode from "vscode";
 import * as path from "path";
 import NeDb from "@seald-io/nedb";
 import {
-  VscodeReceiveMessage,
-  UpdateStatusMessage,
-  UpdateDeveloperMessage,
-  AddTaskRequestMessage,
-  UpdateTaskRequestMessage,
-  GetTasksRequestMessage,
   TaskRecord,
   Kanban,
   MessagePayload,
-  UpdateTasksResponseMessage,
-  UpdateKanbanResponseMessage,
   RequestMessage,
   KanbanMessage,
 } from "./constants";
@@ -170,30 +162,14 @@ class KanbanView {
     this.refreshTree();
   };
 
-  refreshWebviewKanban = async (_id: string) => {
-    const kanban = await this.kanbanDb.findOneAsync({ _id });
-    if (this.webviewPanel) {
-      this.webviewPanel.webview.postMessage(
-        new UpdateKanbanResponseMessage(kanban)
-      );
-    }
-  };
-
-  updateStatus = async ({
-    _id,
-    status,
-  }: MessagePayload<UpdateStatusMessage>) => {
-    await this.kanbanDb.updateAsync({ _id }, { $set: { status } });
-    await this.refreshWebviewKanban(_id);
-  };
-
-  updateDeveloper = async ({
-    _id,
-    developer,
-  }: MessagePayload<UpdateDeveloperMessage>) => {
-    await this.kanbanDb.updateAsync({ _id }, { $set: { developer } });
-    await this.refreshWebviewKanban(_id);
-  };
+  // refreshWebviewKanban = async (_id: string) => {
+  //   const kanban = await this.kanbanDb.findOneAsync({ _id });
+  //   if (this.webviewPanel) {
+  //     this.webviewPanel.webview.postMessage(
+  //       // new UpdateKanbanResponseMessage(kanban)
+  //     );
+  //   }
+  // };
 
   openKanban = async (item: TreeItem) => {
     const columnToShowIn = vscode.window.activeTextEditor

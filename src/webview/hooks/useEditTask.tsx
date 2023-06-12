@@ -4,12 +4,12 @@ import { useCallback } from "react";
 import { TaskRecord } from "../../constants";
 import ModifyForm, { TaskFormValues } from "../components/Modify";
 import { useTask } from "../state";
-import { fakeResolve, formatDevelopDateValues } from "../utils";
+import { formatDevelopDateValues } from "../utils";
 
 export function useEditTask() {
   const [form] = Form.useForm<TaskFormValues>();
   const { modal } = App.useApp();
-  const { updateTask } = useTask();
+  const updateTask = useTask((s) => s.updateTask);
 
   const handleEditTask = useCallback((task: TaskRecord) => {
     form.setFieldsValue({
@@ -20,13 +20,14 @@ export function useEditTask() {
       developer: task.developer,
     });
     modal.confirm({
+      icon: null,
       title: "修改任务",
       content: <ModifyForm form={form} />,
       async onOk() {
         const { title, status, developDate, developer, progress } =
           await form.validateFields();
 
-        updateTask({
+        return updateTask({
           ...task,
           title,
           status,
@@ -34,7 +35,6 @@ export function useEditTask() {
           developer,
           progress,
         });
-        return fakeResolve();
       },
     });
   }, []);

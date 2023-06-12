@@ -13,8 +13,6 @@ import "dayjs/locale/zh-cn";
 import { useAlgorithm } from "./state";
 dayjs.locale("zh-cn");
 
-console.log("main");
-
 const Main = () => {
   const { algorithm } = useAlgorithm();
 

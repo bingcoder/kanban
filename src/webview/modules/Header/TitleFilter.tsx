@@ -18,6 +18,7 @@ const SearchFilter = () => {
       }, 500);
     };
   }, []);
+
   return (
     <Input
       allowClear

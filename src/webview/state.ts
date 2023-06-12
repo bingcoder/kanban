@@ -5,18 +5,23 @@ import {
   Kanban,
   TaskRecord,
   ConfigOption,
-  UpdateStatusMessage,
-  UpdateDeveloperMessage,
   AddTaskRequestMessage,
   UpdateTaskRequestMessage,
   MessagePayload,
-  GetTasksRequestMessage,
   RefreshTasksRequestMessage,
-  UpdateTaskStatusRequestMessage,
+  DeleteTaskRequestMessage,
+  UpdateKanbanDeveloperRequestMessage,
+  UpdateKanbanStatusRequestMessage,
 } from "../constants";
-import "./dbAdapter";
-
-const adapter = window.dbAdapter();
+import {
+  addTaskService,
+  deleteTaskService,
+  getKanban,
+  refreshTasksService,
+  updateKanbanDeveloperService,
+  updateKanbanStatusService,
+  updateTaskService,
+} from "./utils/request";
 
 export const useAlgorithm = create<{
   algorithm: typeof theme.defaultAlgorithm;
@@ -54,30 +59,58 @@ export const useSearchCondition = create<{
 }));
 
 export const useKanban = create<{
-  kanban: Kanban;
-  updateKanban: (kanban: Kanban) => void;
-  updateStatus: (status: ConfigOption[]) => void;
-  updateDeveloper: (developer: ConfigOption[]) => void;
+  kanban: Kanban[];
+  activeKanban: Kanban | null;
+  getKanban: () => Promise<void>;
+  updateKanban: (kanban: Kanban[]) => void;
+  updateActiveKanban: (kanban?: Kanban) => void;
+  updateKanbanStatus: (status: ConfigOption[]) => Promise<void>;
+  updateKanbanDevelopers: (
+    developer: MessagePayload<UpdateKanbanDeveloperRequestMessage>["developer"]
+  ) => Promise<void>;
 }>((set, get) => ({
-  kanban: window.vscKanban,
+  kanban: [],
+  activeKanban: null,
+  updateActiveKanban(kanban) {
+    set({
+      activeKanban: kanban,
+    });
+  },
   updateKanban(kanban) {
     set({ kanban });
   },
-  updateStatus(status) {
-    adapter.postMessage(
-      new UpdateStatusMessage({
-        _id: get().kanban._id,
-        status,
-      })
-    );
+  async getKanban() {
+    const res: Kanban[] = await getKanban();
+    if (Array.isArray(res) && res.length) {
+      get().updateKanban(res);
+      const activeKanbanId = localStorage.getItem("activeKanbanId");
+      const activeKanban = activeKanbanId
+        ? res.find((item) => item._id === activeKanbanId)
+        : res[0];
+      get().updateActiveKanban(activeKanban);
+      console.log(activeKanban);
+    }
   },
-  updateDeveloper(developer) {
-    adapter.postMessage(
-      new UpdateDeveloperMessage({
-        _id: get().kanban._id,
+  async updateKanbanDevelopers(developer) {
+    await updateKanbanDeveloperService(
+      new UpdateKanbanDeveloperRequestMessage({
+        _id: useKanban.getState().activeKanban!._id,
         developer,
       })
     );
+    useTask.getState().refreshTasks();
+    get().getKanban();
+  },
+
+  async updateKanbanStatus(status) {
+    await updateKanbanStatusService(
+      new UpdateKanbanStatusRequestMessage({
+        _id: useKanban.getState().activeKanban!._id,
+        status,
+      })
+    );
+    useTask.getState().refreshTasks();
+    get().getKanban();
   },
 }));
 
@@ -86,52 +119,55 @@ export const useTask = create<{
   updateTasks: (tasks: any) => void;
   addTask: (
     task: Omit<MessagePayload<AddTaskRequestMessage>, "kanban">
-  ) => void;
-  updateTask: (task: MessagePayload<UpdateTaskRequestMessage>) => void;
-  updateTaskStatus: (
-    payload: MessagePayload<UpdateTaskStatusRequestMessage>
-  ) => void;
-  getTasks: () => void;
+  ) => Promise<void>;
+  updateTask: (task: MessagePayload<UpdateTaskRequestMessage>) => Promise<void>;
+  refreshTasks: () => Promise<void>;
+  deleteTask: (id: MessagePayload<DeleteTaskRequestMessage>) => Promise<void>;
 }>((set) => ({
   tasks: {} as any,
   updateTasks(tasks) {
     set({ tasks });
   },
-  addTask(task) {
-    adapter.postMessage(
+  async addTask(task) {
+    await addTaskService(
       new AddTaskRequestMessage({
         ...task,
-        kanban: useKanban.getState().kanban._id,
+        kanban: useKanban.getState().activeKanban!._id,
       })
     );
+    await useTask.getState().refreshTasks();
   },
-  updateTask(task) {
-    adapter.postMessage(new UpdateTaskRequestMessage(task));
+  async updateTask(task) {
+    await updateTaskService(new UpdateTaskRequestMessage(task));
+    // TODO 优化
+    await useTask.getState().refreshTasks();
   },
-  updateTaskStatus(payload) {
-    adapter.postMessage(new UpdateTaskStatusRequestMessage(payload));
-  },
-  getTasks() {
-    adapter.postMessage(
+  async refreshTasks() {
+    const tasks = await refreshTasksService(
       new RefreshTasksRequestMessage({
         ...useSearchCondition.getState().condition,
-        _id: useKanban.getState().kanban._id,
+        _id: useKanban.getState().activeKanban?._id || "",
       })
     );
+    set({ tasks });
+  },
+  async deleteTask(payload) {
+    await deleteTaskService(new DeleteTaskRequestMessage(payload));
+    await useTask.getState().refreshTasks();
   },
 }));
 
 export function useStatus() {
-  return useKanban(({ kanban, updateStatus }) => ({
-    status: kanban.status,
-    statusColumns: [...(kanban.status || []), AddStatus],
-    updateStatus,
+  return useKanban(({ activeKanban, updateKanbanStatus }) => ({
+    status: activeKanban?.status || [],
+    statusColumns: [...(activeKanban?.status || []), AddStatus],
+    updateKanbanStatus,
   }));
 }
 
 export function useDeveloper() {
-  return useKanban(({ kanban, updateDeveloper }) => ({
-    developer: kanban.developer || [],
-    updateDeveloper,
+  return useKanban(({ activeKanban, updateKanbanDevelopers }) => ({
+    developer: activeKanban?.developer || [],
+    updateKanbanDevelopers,
   }));
 }

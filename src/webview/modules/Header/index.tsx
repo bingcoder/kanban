@@ -1,11 +1,10 @@
-import { EllipsisOutlined } from "@ant-design/icons";
-import { Button, Col, Row, Space } from "antd";
+import { Row, Space } from "antd";
 import ConditionFilter from "./ConditionFilter";
 import DateFilter from "./DateFilter";
 import KanbanSwitch from "./KanbanSwitch";
 import SearchSwitch from "./SearchSwitch";
-import ThemeSwitch from "./ThemeSwitch";
 import TitleFilter from "./TitleFilter";
+import ThemeSwitch from "./ThemeSwitch";
 import ExtraSetting from "./ExtraSetting";
 
 const Header = () => {
@@ -15,15 +14,13 @@ const Header = () => {
         <KanbanSwitch />
         <SearchSwitch />
       </Space>
-      <Col>
-        <Space>
-          <TitleFilter />
-          <DateFilter />
-          <ConditionFilter />
-          <ThemeSwitch />
-          <ExtraSetting />
-        </Space>
-      </Col>
+      <Space>
+        <TitleFilter />
+        <DateFilter />
+        <ConditionFilter />
+        <ThemeSwitch />
+        <ExtraSetting />
+      </Space>
     </Row>
   );
 };

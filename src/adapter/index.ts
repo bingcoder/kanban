@@ -1,16 +1,23 @@
 import NeDb from "@seald-io/nedb";
 import {
   AddTaskRequestMessage,
-  GetTasksRequestMessage,
+  AddTaskResponseMessage,
+  DeleteTaskRequestMessage,
+  DeleteTaskResponseMessage,
+  GetKanbanResponseMessage,
   Kanban,
   MessagePayload,
   RefreshTasksRequestMessage,
   RefreshTasksResponseMessage,
   TaskRecord,
-  UpdateKanbanResponseMessage,
-  UpdateStatusMessage,
+  UpdateKanbanDeveloperRequestMessage,
+  UpdateKanbanDeveloperResponseMessage,
+  UpdateKanbanStatusRequestMessage,
+  UpdateKanbanStatusResponseMessage,
+  UpdateTaskRequestMessage,
+  UpdateTaskResponseMessage,
   UpdateTaskStatusRequestMessage,
-  UpdateTasksResponseMessage,
+  UpdateTaskStatusResponseMessage,
 } from "../constants";
 
 export class DbAdapter {
@@ -27,13 +34,8 @@ export class DbAdapter {
     this.webview = context.webview;
   }
 
-  refreshWebviewKanban = async (_id: string) => {
-    const kanban = await this.kanbanDb.findOneAsync({ _id });
-    this.webview.postMessage(new UpdateKanbanResponseMessage(kanban));
-  };
-
   // 刷新任务
-  refreshTasksRequest = async (
+  refreshTasks = async (
     payload: MessagePayload<RefreshTasksRequestMessage>
   ) => {
     const { _id, developer, developEndAt, title } = payload;
@@ -63,9 +65,15 @@ export class DbAdapter {
   };
 
   // 添加任务
-  addTaskRequest = async (payload: MessagePayload<AddTaskRequestMessage>) => {
+  addTask = async (payload: MessagePayload<AddTaskRequestMessage>) => {
     await this.taskDb.insertAsync(payload as any);
-    await this.refreshTasksRequest({ _id: payload.kanban });
+    this.webview.postMessage(new AddTaskResponseMessage());
+  };
+
+  // 添加任务
+  deleteTask = async (payload: MessagePayload<DeleteTaskRequestMessage>) => {
+    await this.taskDb.removeAsync({ _id: payload }, { multi: false });
+    this.webview.postMessage(new DeleteTaskResponseMessage());
   };
 
   // 更新任务状态
@@ -73,9 +81,76 @@ export class DbAdapter {
     _id,
     status,
   }: MessagePayload<UpdateTaskStatusRequestMessage>) => {
-    const data = await this.taskDb.updateAsync({ _id }, { $set: { status } });
-    console.log(data);
+    await this.taskDb.updateAsync({ _id }, { $set: { status } });
+    this.webview.postMessage(new UpdateTaskStatusResponseMessage());
+  };
 
-    await this.refreshTasksRequest({ _id: "OPdyWO2ZSZvFS8M7" });
+  // 更新任务
+  updateTask = async ({
+    _id,
+    title,
+    status,
+    developEndAt,
+    developStartAt,
+    developer,
+    progress,
+  }: MessagePayload<UpdateTaskRequestMessage>) => {
+    // TODO 优化
+    const values = {
+      title,
+      status,
+      developEndAt,
+      developStartAt,
+      developer,
+      progress,
+    };
+
+    const set: Partial<typeof values> = {};
+    let key: keyof typeof values;
+
+    for (key in values) {
+      if (values[key] != null) {
+        set[key] = values[key] as any;
+      }
+    }
+    const task = await this.taskDb.findOneAsync({ _id });
+    // console.log(task);
+    // TODO 优化
+    if (status && task.status !== status && status === "ctkbtmhgxu") {
+      set.progress = 100;
+    }
+
+    await this.taskDb.updateAsync(
+      { _id },
+      {
+        $set: set,
+      }
+    );
+    this.webview.postMessage(new UpdateTaskResponseMessage());
+  };
+
+  updateKanbanDevelopers = async ({
+    _id,
+    developer,
+  }: MessagePayload<UpdateKanbanDeveloperRequestMessage>) => {
+    await this.kanbanDb.updateAsync({ _id }, { $set: { developer } });
+    this.webview.postMessage(new UpdateKanbanDeveloperResponseMessage());
+  };
+
+  updateKanbanStatus = async ({
+    _id,
+    status,
+  }: MessagePayload<UpdateKanbanStatusRequestMessage>) => {
+    await this.kanbanDb.updateAsync({ _id }, { $set: { status } });
+    this.webview.postMessage(new UpdateKanbanStatusResponseMessage());
+  };
+
+  getKanban = async () => {
+    let kanban = await this.kanbanDb.findAsync({}).sort({ createdAt: 1 });
+    if (kanban?.length === 0) {
+      await this.kanbanDb.insertAsync({ title: "默认看板" } as any);
+    }
+    kanban = await this.kanbanDb.findAsync({}).sort({ createdAt: 1 });
+    this.webview.postMessage(new GetKanbanResponseMessage(kanban));
   };
 }

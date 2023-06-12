@@ -1,13 +1,3 @@
-/* .task-container {
-  padding: 10px;
-  background-color: #eee;
-  width: 300px;
-  display: flex;
-  flex-direction: column;
-  border-radius: 6px;
-  min-height: 100vh;
-} */
-
 #root {
   height: 100%;
 }
@@ -52,16 +42,17 @@
   .task-droppable-container {
     height: 0;
     flex-grow: 1;
-    padding: 10px;
+    padding: 6px;
     border-radius: 6px;
     overflow: hidden auto;
     transition: background-color 0.3s ease;
+    border: 2px solid transparent;
   }
 
   .task-droppable-container-dragging-over {
-    // background-color: pink;
     border: 2px solid #1677ff;
   }
+
   .task-card {
     margin-bottom: 10px;
     .ant-picker-range {
@@ -72,8 +63,9 @@
       }
     }
   }
+}
 
-  .status-draggable-item {
-    margin-bottom: 8px;
-  }
+.ant-modal-confirm-content {
+  margin-top: 16px !important;
+  max-width: 100% !important;
 }

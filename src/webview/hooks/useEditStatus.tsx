@@ -3,7 +3,7 @@ import {
   MinusCircleOutlined,
   PlusOutlined,
 } from "@ant-design/icons";
-import { App, Button, Col, Form, Input, Popconfirm, Row } from "antd";
+import { App, Button, Form, Input, Popconfirm, Row } from "antd";
 import { useCallback } from "react";
 import {
   DragDropContext,
@@ -13,20 +13,22 @@ import {
   DroppableProvided,
 } from "react-beautiful-dnd";
 import { AddStatus } from "../../constants";
-import { useKanban, useStatus } from "../state";
-import { fakeResolve, uuid } from "../utils";
+import { useStatus } from "../state";
+import { uuid } from "../utils";
 import { ConfigOption } from "../../constants";
 
 export function useEditStatus() {
   const [form] = Form.useForm<{ status: ConfigOption[] }>();
   const { modal } = App.useApp();
-  const { status, updateStatus } = useStatus();
+  const { status, updateKanbanStatus } = useStatus();
 
   const handleEditStatus = useCallback(() => {
     form.setFieldsValue({
       status: status?.filter((item) => item.id !== AddStatus.id),
     });
     modal.confirm({
+      icon: null,
+      width: 500,
       title: "编辑状态",
       content: (
         <Form form={form}>
@@ -59,48 +61,56 @@ export function useEditStatus() {
                             >
                               {(provided: DraggableProvided) => (
                                 <Row
+                                  wrap={false}
                                   className="status-draggable-item"
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
                                 >
-                                  <Col flex={1}>
-                                    <Form.Item
-                                      name={[name, "label"]}
-                                      rules={[
-                                        {
-                                          required: true,
-                                          whitespace: true,
-                                          message: "请输入状态",
-                                        },
-                                      ]}
-                                      noStyle
-                                    >
-                                      <Input placeholder="状态" />
-                                    </Form.Item>
-                                  </Col>
-                                  <Col>
+                                  <Form.Item
+                                    name={[name, "id"]}
+                                    rules={[
+                                      {
+                                        required: true,
+                                        whitespace: true,
+                                        message: "请输入ID",
+                                      },
+                                    ]}
+                                  >
+                                    <Input placeholder="ID" />
+                                  </Form.Item>
+                                  <Form.Item>&emsp;-&emsp;</Form.Item>
+                                  <Form.Item
+                                    name={[name, "label"]}
+                                    rules={[
+                                      {
+                                        required: true,
+                                        whitespace: true,
+                                        message: "请输入状态",
+                                      },
+                                    ]}
+                                  >
+                                    <Input placeholder="状态" />
+                                  </Form.Item>
+                                  <Button
+                                    type="text"
+                                    icon={<DragOutlined />}
+                                    {...provided.dragHandleProps}
+                                  />
+                                  <Popconfirm
+                                    title="删除状态(同时删除任务)"
+                                    onConfirm={() => remove(name)}
+                                  >
                                     <Button
                                       type="text"
-                                      icon={<DragOutlined />}
-                                      {...provided.dragHandleProps}
+                                      icon={<MinusCircleOutlined />}
                                     />
-                                    <Popconfirm
-                                      title="删除状态(同时删除任务)"
-                                      onConfirm={() => remove(name)}
-                                    >
-                                      <Button
-                                        type="text"
-                                        icon={<MinusCircleOutlined />}
-                                      />
-                                    </Popconfirm>
-                                  </Col>
+                                  </Popconfirm>
                                 </Row>
                               )}
                             </Draggable>
                           );
                         })}
                         {provided.placeholder}
-
                         <Form.Item>
                           <Button
                             type="dashed"
@@ -122,8 +132,7 @@ export function useEditStatus() {
       ),
       async onOk() {
         const values = await form.validateFields();
-        updateStatus(values.status);
-        return fakeResolve();
+        return updateKanbanStatus(values.status);
       },
       onCancel() {
         setTimeout(() => {

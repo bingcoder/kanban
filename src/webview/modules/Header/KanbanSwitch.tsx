@@ -1,12 +1,13 @@
+import { useKanban } from "@/state";
 import { DashboardOutlined, PlusOutlined } from "@ant-design/icons";
 import { Button, Divider, Dropdown, Space, theme } from "antd";
-import React from "react";
+import React, { memo } from "react";
 
 const isVscode = !!window.acquireVsCodeApi;
 
 const KanbanSwitch = () => {
   const { token } = theme.useToken();
-
+  const { kanban, activeKanban } = useKanban();
   const contentStyle = {
     backgroundColor: token.colorBgElevated,
     borderRadius: token.borderRadiusLG,
@@ -19,7 +20,10 @@ const KanbanSwitch = () => {
   return (
     <Dropdown
       trigger={["click"]}
-      menu={{ items: [{ label: "看板一", key: 1 }] }}
+      menu={{
+        items: kanban.map((item) => ({ label: item.title, key: item._id })),
+        selectedKeys: [activeKanban!._id],
+      }}
       dropdownRender={(menu) => {
         return (
           <div style={contentStyle}>
@@ -43,4 +47,4 @@ const KanbanSwitch = () => {
   );
 };
 
-export default KanbanSwitch;
+export default memo(KanbanSwitch);

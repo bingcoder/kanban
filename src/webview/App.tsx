@@ -1,60 +1,51 @@
-import { useMount } from "ahooks";
-import { Space, App, theme } from "antd";
+import { App, theme } from "antd";
 import { DragDropContext, DropResult } from "react-beautiful-dnd";
-import Header from "./modules/Header";
-import TaskColumn from "./components/TaskColumn";
-import { useKanban, useStatus, useTask } from "./state";
 import "./App.less";
-import { KanbanMessage, ResponseMessage } from "../constants";
+import TaskColumn from "./components/TaskColumn";
+import Header from "./modules/Header";
+import { useKanban, useStatus, useTask } from "./state";
+import useInit from "./hooks/useInit";
 
 function MainApp() {
   const { token } = theme.useToken();
-  const { tasks, getTasks, updateTasks, updateTaskStatus } = useTask();
+  const { tasks, updateTasks, updateTask } = useTask();
   const { statusColumns } = useStatus();
-  const { kanban, updateKanban } = useKanban();
-
-  console.log(tasks);
-
-  useMount(() => {
-    const handler = {
-      refreshTasksResponse: updateTasks,
-    };
-    window.addEventListener("message", (e: MessageEvent<ResponseMessage>) => {
-      const message = e.data;
-      if (message?.source === KanbanMessage.source) {
-        handler[message.command]?.(message.payload);
-      }
-    });
-  });
-
-  const handleDragEnd = (result: DropResult) => {
+  const activeKanban = useKanban((s) => s.activeKanban);
+  useInit();
+  const handleDragEnd = async (result: DropResult) => {
     if (result) {
       const { draggableId, source, destination } = result;
       if (
         !destination ||
         result.reason === "CANCEL" ||
-        (source.droppableId === destination.droppableId &&
-          source.index === destination.index)
+        source.droppableId === destination.droppableId
       ) {
         return;
       }
+
       const sourceList = tasks?.[source.droppableId] || [];
-      const destinationList = tasks?.[destination!.droppableId] || [];
+      const destinationList = [...(tasks?.[destination!.droppableId] || [])];
 
       const task = sourceList.splice(source.index, 1)[0];
       task.status = destination.droppableId;
       destinationList.splice(destination?.index!, 0, task);
+
       updateTasks({
         ...(tasks || {}),
         [source.droppableId]: sourceList,
         [destination?.droppableId]: destinationList,
       } as typeof tasks);
-      updateTaskStatus({
+
+      await updateTask({
         _id: draggableId,
         status: destination.droppableId,
       });
     }
   };
+
+  if (!activeKanban) {
+    return null;
+  }
 
   return (
     <App style={{ backgroundColor: token.colorBgContainer }}>

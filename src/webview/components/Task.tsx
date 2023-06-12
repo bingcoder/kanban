@@ -70,7 +70,7 @@ const Task: React.FC<
   const { status } = useStatus();
   const { developer: developerList } = useDeveloper();
   const handleEditTask = useEditTask();
-  const updateTaskStatus = useTask((s) => s.updateTaskStatus);
+  const { updateTask, deleteTask } = useTask();
 
   const items: MenuProps["items"] = useMemo(() => {
     return [
@@ -83,12 +83,7 @@ const Task: React.FC<
         label: (
           <Popconfirm
             arrow={false}
-            onConfirm={
-              () => {}
-              // deleteTask(task._id).then(() => {
-              //   getTasks();
-              // })
-            }
+            onConfirm={() => deleteTask(task._id)}
             title="确认删除"
           >
             删除
@@ -114,7 +109,8 @@ const Task: React.FC<
     if (info.key === task.status) {
       return;
     }
-    updateTaskStatus({
+
+    updateTask({
       _id: task._id,
       status: info.key,
     });

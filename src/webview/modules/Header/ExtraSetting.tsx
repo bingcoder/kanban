@@ -1,3 +1,4 @@
+import { useEditStatus } from "@/hooks";
 import { useEditDeveloper } from "@/hooks/useEditDeveloper";
 import {
   EllipsisOutlined,
@@ -7,10 +8,11 @@ import {
   TeamOutlined,
   ClusterOutlined,
 } from "@ant-design/icons";
-import { Button, Dropdown, Row, Segmented } from "antd";
+import { Button, Dropdown } from "antd";
 
 const SearchSwitch = () => {
   const handleEditDeveloper = useEditDeveloper();
+  const handleEditStatus = useEditStatus();
 
   return (
     <Dropdown
@@ -41,6 +43,7 @@ const SearchSwitch = () => {
             icon: <ClusterOutlined />,
             label: "状态管理",
             key: 4,
+            onClick: handleEditStatus,
           },
           {
             type: "divider",

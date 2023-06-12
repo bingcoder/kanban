@@ -2,7 +2,6 @@ import { DatePicker, Form, FormInstance, Input, Select, Slider } from "antd";
 import React from "react";
 import { useDeveloper, useStatus } from "../state";
 import { Dayjs } from "dayjs";
-import { ConfigOption } from "../../constants";
 
 export interface TaskFormValues {
   title: string;

@@ -1,8 +1,9 @@
 //@ts-check
 
 "use strict";
-const HtmlWebpackPlugin = require("html-webpack-plugin");
 const path = require("path");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
+const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
 
 //@ts-check
 /** @typedef {import('webpack').Configuration} WebpackConfig **/
@@ -42,6 +43,7 @@ const config = {
     new HtmlWebpackPlugin({
       template: "./src/webview/index.html",
     }),
+    new ForkTsCheckerWebpackPlugin(),
   ],
 };
 module.exports = config;
